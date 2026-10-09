@@ -52,8 +52,8 @@ export async function uploadMetadata(o: { name: string; symbol: string; descript
 }
 
 /** Creates the coin from the launcher wallet. Returns the mint and signature. */
-export async function createCoin(o: { name: string; symbol: string; uri: string; devBuySol: number }): Promise<{ mint: string; sig: string }> {
-  const mint = Keypair.generate();
+export async function createCoin(o: { name: string; symbol: string; uri: string; devBuySol: number; mint?: Keypair }): Promise<{ mint: string; sig: string }> {
+  const mint = o.mint ?? Keypair.generate();
   if (env.TEST_MODE) return { mint: mint.publicKey.toBase58(), sig: fakeSig('create') };
   const kp = launcher();
   const tx = await portal({

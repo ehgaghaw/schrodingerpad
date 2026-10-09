@@ -1,6 +1,7 @@
 // Launching a boxed coin. Order matters for fairness: the quantum seed is fetched and its
 // SHA-256 is written on-chain (memo) BEFORE the coin exists, so nobody, us included, can pick
 // an outcome after seeing who buys.
+import { Keypair } from '@solana/web3.js';
 import { prisma } from './db';
 import { env, boxName, cluster } from './env';
 import { quantumSeed, markSeedUsed } from './qrng';
@@ -38,12 +39,16 @@ export async function launchBox(o: { ticker: string; creatorWallet: string; inte
     await prisma.box.update({ where: { id: box.id }, data: { commitSig } });
     const name = boxName(box.number);
     const image = await renderSealed();
+    // The mint address exists before the metadata, so the coin links to its own page here.
+    const mintKp = Keypair.generate();
+    const page = env.PUBLIC_URL ? `${env.PUBLIC_URL}/box/${mintKp.publicKey.toBase58()}` : undefined;
     const uri = await uploadMetadata({
       name, symbol: ticker, image,
       description: `${name}. Sealed. The first buy opens it; quantum randomness decides what it becomes. Commitment sha256:${commitment}`,
-      website: env.PUBLIC_URL ? `${env.PUBLIC_URL}/box/pending` : undefined,
+      website: page,
+      twitter: `https://x.com/${env.X_HANDLE}`,
     });
-    const { mint, sig } = await createCoin({ name, symbol: ticker, uri, devBuySol: env.DEV_BUY_SOL });
+    const { mint, sig } = await createCoin({ name, symbol: ticker, uri, devBuySol: env.DEV_BUY_SOL, mint: mintKp });
     const now = new Date();
     const done = await prisma.box.update({
       where: { id: box.id },
