@@ -24,7 +24,7 @@ function summarize(b: Box, spark: number[], change: number, usd: number) {
   return {
     number: b.number, mint: b.mint, ticker: b.ticker, state: b.state, onchainName: boxName(b.number),
     name: collapsed ? b.name : null, fate: collapsed ? b.fate : null, rarity: collapsed ? b.rarity : null,
-    image: b.mint ? `/api/art/${b.mint}` : '/api/art/sealed',
+    image: b.mint ? `/api/art/${b.mint}?v=${b.updatedAt.getTime()}` : '/api/art/sealed',
     creator: b.creatorWallet, launchedAt: b.launchedAt, collapsedAt: b.collapsedAt, decoheresAt: b.decoheresAt,
     marketCapSol: b.marketCapSol, marketCapUsd: usd ? b.marketCapSol * usd : null, change24h: change, progress: b.bondingProgress, complete: b.complete,
     spark, seedSource: b.seedSource, verifiedOnChain: b.verifiedOnChain, test: b.test,
