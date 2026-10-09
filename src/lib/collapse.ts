@@ -14,7 +14,8 @@ export async function collapseBox(boxId: string, reason: 'FIRST_BUY' | 'DECOHERE
   });
   if (claimed.count === 0) return null;
   const box = await prisma.box.findUniqueOrThrow({ where: { id: boxId } });
-  const id = deriveIdentity(box.seed, env.ALIVE_ODDS_PERCENT);
+  // test boxes are never real tokens, so they always collapse Dead
+  const id = deriveIdentity(box.seed, box.test ? 0 : env.ALIVE_ODDS_PERCENT);
   const art = await renderCollapsed(id);
   // Re-check the reveal against the memo actually on chain before calling it verified.
   let verified = false;
