@@ -6,6 +6,9 @@ import { Keypair, PublicKey, VersionedTransaction, ComputeBudgetProgram } from '
 import { getAssociatedTokenAddressSync, createBurnCheckedInstruction, getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { env } from './env';
 import { connection, launcher, sendFromLauncher } from './solana';
+import { prisma } from './db';
+
+const anyGraduated = async () => (await prisma.box.count({ where: { complete: true, test: false } })) > 0;
 
 const PUMPPORTAL = 'https://pumpportal.fun/api/trade-local';
 export const PUMP_PROGRAM = new PublicKey('6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P');
@@ -65,6 +68,11 @@ export async function createCoin(o: { name: string; symbol: string; uri: string;
 export async function collectCreatorFees(testLamports = 0n): Promise<{ sig: string; lamports: bigint } | null> {
   if (env.TEST_MODE) return testLamports > 0n ? { sig: fakeSig('collect'), lamports: testLamports } : null;
   const kp = launcher();
+  // Skip the transaction (and its fee) unless the pump.fun creator vault holds something worth claiming.
+  // Graduated coins accrue on PumpSwap instead, so always try when any box has graduated.
+  const vault = PublicKey.findProgramAddressSync([Buffer.from('creator-vault'), kp.publicKey.toBuffer()], PUMP_PROGRAM)[0];
+  const [bal, rent] = await Promise.all([connection().getBalance(vault), connection().getMinimumBalanceForRentExemption(0)]);
+  if (bal - rent < 1_000_000 && !(await anyGraduated())) return null;
   const tx = await portal({ publicKey: kp.publicKey.toBase58(), action: 'collectCreatorFee', priorityFee: 0.0002, pool: 'pump' });
   tx.sign([kp]);
   const sig = await sendSigned(tx);
