@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { background: #000; color: #fff; }
+body { font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+::selection { background: #fff; color: #000; }
+* { scrollbar-width: thin; scrollbar-color: #262626 transparent; }
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line2 bg-raised px-4 py-2 text-sm font-medium text-ink transition hover:border-white/30 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40; }
+  .label { @apply text-[11px] font-medium uppercase tracking-[0.12em] text-mute; }
+  .mono { @apply font-mono text-[12px]; }
+  .input { @apply w-full rounded-xl border border-line bg-black px-3 py-2.5 text-sm text-ink outline-none transition placeholder:text-mute focus:border-white/40; }
+  .pill { @apply inline-flex items-center gap-1 rounded-full border border-line2 px-2 py-0.5 text-[11px] font-medium text-mute; }
+  .link { @apply text-ink underline decoration-white/20 underline-offset-4 transition hover:decoration-white; }
+}
+
+/* shimmer skeleton */
+.skeleton { position: relative; overflow: hidden; background: #0f0f0f; border-radius: 8px; }
+.skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent); animation: shimmer 1.6s infinite; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* trending marquee: continuous, pauses on hover */
+.marquee { display: flex; width: max-content; animation: marquee 60s linear infinite; }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* wallet adapter, restyled black */
+.wallet-adapter-button { font-family: inherit !important; font-size: 13px !important; height: 36px !important; padding: 0 14px !important; border-radius: 12px !important; background: #fff !important; color: #000 !important; font-weight: 600 !important; }
+.wallet-adapter-button:not([disabled]):hover { background: #e5e5e5 !important; }
+.wallet-adapter-modal-wrapper { background: #0a0a0a !important; border: 1px solid #1a1a1a; border-radius: 18px !important; font-family: inherit !important; }
+.wallet-adapter-modal-title { font-weight: 600 !important; }
+.wallet-adapter-modal-list .wallet-adapter-button { background: transparent !important; color: #fff !important; font-weight: 500 !important; }
+.wallet-adapter-modal-list .wallet-adapter-button:hover { background: #111 !important; }
+.wallet-adapter-dropdown-list { background: #0a0a0a !important; border: 1px solid #1a1a1a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee { animation: none; }
+  .skeleton::after { animation: none; }
+  * { scroll-behavior: auto !important; }
+}

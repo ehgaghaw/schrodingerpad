@@ -1,0 +1,56 @@
+{
+  "name": "schrodingerpad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SchrodingerPad: a Solana launchpad on pump.fun where every coin is born in a sealed box and collapses into a quantum-random identity.",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "prisma generate && next build",
+    "start": "node scripts/start.mjs",
+    "start:web": "prisma migrate deploy && next start -p ${PORT:-3000}",
+    "start:worker": "prisma migrate deploy && tsx worker/index.ts",
+    "worker": "tsx worker/index.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/unit.test.ts",
+    "e2e": "tsx tests/e2e.ts",
+    "postinstall": "prisma generate"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.2.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.29",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@pump-fun/pump-sdk": "^4.0.0",
+    "@solana/spl-token": "^0.4.15",
+    "@solana/wallet-adapter-base": "^0.9.28",
+    "@solana/wallet-adapter-phantom": "^0.9.30",
+    "@solana/wallet-adapter-react": "^0.15.40",
+    "@solana/wallet-adapter-react-ui": "^0.9.40",
+    "@solana/wallet-adapter-solflare": "^0.6.34",
+    "@solana/web3.js": "^1.99.0",
+    "bn.js": "^5.2.5",
+    "bs58": "^6.0.0",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^1.54.0",
+    "next": "^14.2.33",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15",
+    "twitter-api-v2": "^1.29.1",
+    "zod": "^4.6.5"
+  }
+}

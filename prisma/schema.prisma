@@ -1,0 +1,297 @@
+// SchrodingerPad data model.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BoxState {
+  LAUNCHING
+  SEALED
+  COLLAPSING
+  COLLAPSED
+  FAILED
+}
+
+enum SeedSource {
+  QUANTUM
+  CLASSICAL
+}
+
+enum Fate {
+  ALIVE
+  DEAD
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  ULTRA_RARE
+}
+
+enum CollapseReason {
+  FIRST_BUY
+  DECOHERENCE
+}
+
+enum IntentStatus {
+  PENDING
+  PAID
+  LAUNCHING
+  LAUNCHED
+  FAILED
+}
+
+enum PayoutKind {
+  HOLDER
+  CREATOR
+}
+
+enum PayoutStatus {
+  PENDING
+  SENDING
+  PAID
+  FAILED
+}
+
+enum BurnStatus {
+  PENDING
+  BOUGHT
+  BURNED
+  FAILED
+}
+
+/// One coin. Born sealed; the first buy (or decoherence) collapses it into an identity.
+model Box {
+  id     String   @id @default(cuid())
+  number Int      @unique @default(autoincrement())
+  mint   String?  @unique
+  ticker String
+  state  BoxState @default(LAUNCHING)
+  test   Boolean  @default(false)
+
+  creatorWallet String
+
+  // ---- fairness: commit-reveal ----
+  /// 32-byte seed, hex. Secret until collapse; never returned by the API before then.
+  seed             String
+  /// sha256(seed bytes), hex. Published at launch and written on-chain in a memo.
+  commitment       String
+  seedSource       SeedSource
+  seedProvider     String
+  seedRequestId    String
+  seedSourceTime   String?
+  seedFetchedAt    DateTime
+  seedNote         String?
+  commitSig        String?
+  commitCluster    String
+  /// set at collapse when sha256(seed) was re-checked against the memo fetched from chain
+  verifiedOnChain  Boolean  @default(false)
+  verifiedAt       DateTime?
+
+  // ---- launch ----
+  launchSig   String?
+  metadataUri String?
+  launchedAt  DateTime?
+  decoheresAt DateTime?
+  launchError String?
+
+  // ---- observation / collapse ----
+  observerWallet String?
+  observeSig     String?
+  observedAt     DateTime?
+  collapseReason CollapseReason?
+  collapsedAt    DateTime?
+  name           String?
+  rarity         Rarity?
+  rarityRoll     Int?
+  fate           Fate?
+  lore           String?
+  traits         Json?
+  art            Bytes?
+  postedAt       DateTime?
+  postId         String?
+
+  // ---- market (from pump.fun trade events) ----
+  priceSol       Float    @default(0)
+  marketCapSol   Float    @default(0)
+  bondingProgress Float   @default(0)
+  complete       Boolean  @default(false)
+  lastTradeAt    DateTime?
+  lastSig        String?
+
+  // ---- fees (lamports) ----
+  feesAccrued      BigInt @default(0) // creator fees seen in trade events
+  feesAllocated    BigInt @default(0) // of those, matched to SOL actually collected
+  pendingCreator   BigInt @default(0)
+  pendingPool      BigInt @default(0)
+  creatorPaid      BigInt @default(0)
+  holdersPaid      BigInt @default(0)
+  buybackSpent     BigInt @default(0)
+  tokensBurned     BigInt @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trades      Trade[]
+  allocations FeeAllocation[]
+  batches     PayoutBatch[]
+  payouts     Payout[]
+  burns       Burn[]
+  snapshots   HolderSnapshot[]
+
+  @@index([state, createdAt])
+  @@index([fate])
+  @@index([rarity, rarityRoll])
+}
+
+model Trade {
+  id         String   @id @default(cuid())
+  boxId      String
+  box        Box      @relation(fields: [boxId], references: [id])
+  sig        String
+  idx        Int
+  wallet     String
+  isBuy      Boolean
+  solAmount  BigInt
+  tokenAmount BigInt
+  creatorFee BigInt   @default(0)
+  priceSol   Float
+  marketCapSol Float
+  at         DateTime
+
+  @@unique([sig, idx])
+  @@index([boxId, at])
+}
+
+model LaunchIntent {
+  id         String       @id @default(cuid())
+  wallet     String
+  ticker     String
+  lamports   BigInt
+  status     IntentStatus @default(PENDING)
+  paySig     String?      @unique
+  boxId      String?
+  error      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([wallet, createdAt])
+}
+
+model FeeCollection {
+  id          String          @id @default(cuid())
+  sig         String          @unique
+  lamports    BigInt
+  unattributed BigInt         @default(0)
+  test        Boolean         @default(false)
+  at          DateTime        @default(now())
+  allocations FeeAllocation[]
+}
+
+model FeeAllocation {
+  id           String        @id @default(cuid())
+  collectionId String
+  collection   FeeCollection @relation(fields: [collectionId], references: [id])
+  boxId        String
+  box          Box           @relation(fields: [boxId], references: [id])
+  lamports     BigInt
+  creatorShare BigInt
+  poolShare    BigInt
+  at           DateTime      @default(now())
+
+  @@unique([collectionId, boxId])
+}
+
+model PayoutBatch {
+  id        String     @id @default(cuid())
+  boxId     String
+  box       Box        @relation(fields: [boxId], references: [id])
+  kind      PayoutKind
+  total     BigInt
+  createdAt DateTime   @default(now())
+  payouts   Payout[]
+}
+
+model Payout {
+  id       String       @id @default(cuid())
+  batchId  String
+  batch    PayoutBatch  @relation(fields: [batchId], references: [id])
+  boxId    String
+  box      Box          @relation(fields: [boxId], references: [id])
+  kind     PayoutKind
+  wallet   String
+  lamports BigInt
+  status   PayoutStatus @default(PENDING)
+  sig      String?
+  error    String?
+  createdAt DateTime    @default(now())
+  paidAt   DateTime?
+
+  @@unique([batchId, wallet])
+  @@index([boxId, createdAt])
+  @@index([status])
+}
+
+model Burn {
+  id        String     @id @default(cuid())
+  boxId     String
+  box       Box        @relation(fields: [boxId], references: [id])
+  lamports  BigInt
+  tokens    BigInt     @default(0)
+  buySig    String?
+  burnSig   String?
+  status    BurnStatus @default(PENDING)
+  error     String?
+  createdAt DateTime   @default(now())
+  doneAt    DateTime?
+
+  @@index([boxId, createdAt])
+}
+
+model HolderSnapshot {
+  id     String   @id @default(cuid())
+  boxId  String
+  box    Box      @relation(fields: [boxId], references: [id])
+  wallet String
+  amount BigInt
+  at     DateTime
+
+  @@index([boxId, at])
+}
+
+model KV {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model LogEntry {
+  id    String   @id @default(cuid())
+  level String
+  scope String
+  msg   String
+  at    DateTime @default(now())
+
+  @@index([at])
+}
+
+/// Pre-fetched quantum seeds: the worker pulls 1024 quantum bytes per request from ANU and stores
+/// them as 32-byte seeds. Each seed is consumed by exactly one box and never reused.
+model QuantumSeed {
+  id         String    @id @default(cuid())
+  hex        String
+  provider   String
+  requestId  String
+  offset     Int
+  sourceTime String?
+  fetchedAt  DateTime
+  usedAt     DateTime?
+  boxNumber  Int?
+
+  @@index([usedAt])
+}
