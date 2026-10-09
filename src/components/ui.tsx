@@ -72,14 +72,10 @@ export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`skeleton ${className}`} />;
 }
 
-/** The mark: a wireframe box. */
-export function Logo({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden>
-      <path d="M12 2.5 L21 7.5 L21 16.5 L12 21.5 L3 16.5 L3 7.5 Z" />
-      <path d="M3 7.5 L12 12.5 L21 7.5 M12 12.5 V21.5" />
-    </svg>
-  );
+/** The SchrodingerPad mark (public/logo.png). */
+export function Logo({ size = 26 }: { size?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/logo.png" alt="" width={size} height={size} className="shrink-0" style={{ width: size, height: size }} />;
 }
 
 /** A sealed box that breathes. */

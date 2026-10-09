@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${mono.variable}`}>
       <body className="min-h-screen bg-black font-sans text-ink">
         <Providers>
-          <Nav />
+          <Nav xHandle={env.X_HANDLE} />
           <main>{children}</main>
           <Footer xHandle={env.X_HANDLE} github={env.GITHUB_URL} />
         </Providers>

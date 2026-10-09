@@ -70,7 +70,11 @@ function SearchBox() {
   );
 }
 
-export function Nav() {
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.9 2H22l-7.2 8.3L23 22h-6.6l-5.2-6.8L5.2 22H2l7.7-8.8L1 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.8L6.4 3.9H4.5L17.7 20Z" /></svg>
+);
+
+export function Nav({ xHandle }: { xHandle: string }) {
   const path = usePathname();
   const [menu, setMenu] = useState(false);
   return (
@@ -85,7 +89,10 @@ export function Nav() {
           ))}
         </nav>
         <div className="ml-auto hidden flex-1 justify-end md:flex"><SearchBox /></div>
-        <div className="ml-auto md:ml-0"><WalletButton /></div>
+        <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <a href={`https://x.com/${xHandle}`} target="_blank" rel="noopener" aria-label="SchrodingerPad on X" className="grid h-9 w-9 place-items-center rounded-xl border border-line text-mute transition hover:border-white/30 hover:text-ink"><XIcon /></a>
+          <WalletButton />
+        </div>
         <button className="rounded-lg p-2 text-mute lg:hidden" onClick={() => setMenu(!menu)} aria-label="Menu">{menu ? <X size={18} /> : <Menu size={18} />}</button>
       </div>
       <AnimatePresence>
